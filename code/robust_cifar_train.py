@@ -200,10 +200,10 @@ def main_worker(gpu, ngpus_per_node, args):
     weights = torch.FloatTensor(weights)#??
 
     for epoch in range(args.start_epoch, args.epochs):
+        train_dataset.switch_data()
+        #FL_part
         grads_all, labels = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)#!!!
         if args.use_crust and epoch > args.crust_start:
-            train_dataset.switch_data()
-            #FL_part
             #per class clustering
             ssets = []
             weights = []
