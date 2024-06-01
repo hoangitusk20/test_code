@@ -64,8 +64,10 @@ parser.add_argument('--root-log', type=str, default='log')
 parser.add_argument('--root-model', type=str, default='checkpoint')
 parser.add_argument('--use_crust', action='store_true',
                     help="Whether to use clusters in dataset.")
+
 parser.add_argument('--use_pred', action='store_true',
                     help="Whether to use predict label.")
+
 parser.add_argument('--r',default=2.0, type=float,
                     help='Distance threshsold (i.e. radius) in caculating clusters.')
 parser.add_argument('--fl-ratio', type=float,default=0.5,####???
@@ -203,14 +205,10 @@ def main_worker(gpu, ngpus_per_node, args):
 
     for epoch in range(args.start_epoch, args.epochs):
         train_dataset.switch_data()
-        #FL_part
         grads_all, labels = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)#!!!
         unique_preds = np.unique(labels)
-        if epoch == args.crust_start:
-            optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                momentum = args.momentum,
-                                weight_decay = args.weight_decay)
         if args.use_crust and epoch > args.crust_start:
+            #FL_part
             #per class clustering
             ssets = []
             weights = []
@@ -224,9 +222,10 @@ def main_worker(gpu, ngpus_per_node, args):
                 F = FacilityLocationCIFAR(V, D = dists)
                 B = int(args.fl_ratio * len(grads))
                 sset, vals = lazy_greedy_heap(F,V,B)
-                weights.extend(weight[sset].tolist())
-                sset = sample_ids[np.array(sset)]
-                ssets += list(sset)
+                if len(list(sset))>0:
+                    weights.extend(weight[sset].tolist())
+                    sset = sample_ids[np.array(sset)]
+                    ssets += list(sset)
             weights = torch.FloatTensor(weights)
             train_dataset.adjust_base_indx_temp(ssets)
             label_acc = train_dataset.estimate_label_acc()
@@ -405,15 +404,32 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
     all_grads = np.vstack(all_grads)
     all_targets = np.hstack(all_targets)
     all_preds = np.hstack(all_preds)
-    unique_values, counts = np.unique(all_preds, return_counts=True)
-    count_dict = dict(zip(unique_values, counts))
-    print("Number of predict in every class:")
-    print(count_dict)
+
+
+    # In kiểu dữ liệu, kích thước và giá trị của all_targets
+    print("all_targets:")
+    print(f"Type: {type(all_targets)}")
+    print(f"Shape: {all_targets.shape}")
+    print(f"Values: {all_targets}")
+
+    # In kiểu dữ liệu, kích thước và giá trị của all_preds
+    print("all_preds:")
+    print(f"Type: {type(all_preds)}")
+    print(f"Shape: {all_preds.shape}")
+    print(f"Values: {all_preds}")
+
+    # In ra số phần tử khác nhau trong all_preds
+    unique_preds = np.unique(all_preds)
+    print(f"Number of unique elements in all_preds: {len(unique_preds)}")
+    print(f"Unique elements in all_preds: {unique_preds}")
+
+
+
     log_training.write('epoch %d train acc: %f\n'%(epoch, top1.avg))
     log_training.write('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
     print('epoch %d train acc: %f\n'%(epoch, top1.avg))
     print('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
-    if args.use_pred:
+    if args.use_preds:
         return all_grads, all_preds
     return all_grads, all_targets
 if __name__ == '__main__':
