@@ -65,7 +65,7 @@ parser.add_argument('--root-model', type=str, default='checkpoint')
 parser.add_argument('--use_crust', action='store_true',
                     help="Whether to use clusters in dataset.")
 
-parser.add_argument('--use_pred', action='store_true',
+parser.add_argument('--use_preds', action='store_true',
                     help="Whether to use predict label.")
 
 parser.add_argument('--r',default=2.0, type=float,
