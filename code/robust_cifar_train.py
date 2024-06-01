@@ -206,6 +206,10 @@ def main_worker(gpu, ngpus_per_node, args):
         #FL_part
         grads_all, labels = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)#!!!
         unique_preds = np.unique(labels)
+        if epoch == args.crust_start:
+            optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                momentum = args.momentum,
+                                weight_decay = args.weight_decay)
         if args.use_crust and epoch > args.crust_start:
             #per class clustering
             ssets = []
