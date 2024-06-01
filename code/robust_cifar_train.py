@@ -64,6 +64,8 @@ parser.add_argument('--root-log', type=str, default='log')
 parser.add_argument('--root-model', type=str, default='checkpoint')
 parser.add_argument('--use_crust', action='store_true',
                     help="Whether to use clusters in dataset.")
+parser.add_argument('--use_pred', action='store_true',
+                    help="Whether to use predict label.")
 parser.add_argument('--r',default=2.0, type=float,
                     help='Distance threshsold (i.e. radius) in caculating clusters.')
 parser.add_argument('--fl-ratio', type=float,default=0.5,####???
@@ -406,6 +408,8 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
     log_training.write('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
     print('epoch %d train acc: %f\n'%(epoch, top1.avg))
     print('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
+    if args.use_pred:
+        return all_grads, all_preds
     return all_grads, all_targets
 if __name__ == '__main__':
     main()
