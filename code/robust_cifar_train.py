@@ -65,8 +65,9 @@ parser.add_argument('--root-model', type=str, default='checkpoint')
 parser.add_argument('--use_crust', action='store_true',
                     help="Whether to use clusters in dataset.")
 
-parser.add_argument('--use_preds', action='store_true',
-                    help="Whether to use predict label.")
+parser.add_argument('--label-type', type=str, default='noisy',
+                    help='noisy/pred/correct')
+
 
 parser.add_argument('--r',default=2.0, type=float,
                     help='Distance threshsold (i.e. radius) in caculating clusters.')
@@ -381,6 +382,7 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
     all_grads = []
     all_targets = []
     all_preds = []
+    all_targets_real = []
     top1 = AverageMeter('Acc@1', ':6.2f')
     top1_on_noisy = AverageMeter('Acc@1', ':6.2f')
 
@@ -388,6 +390,7 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
         if args.gpu is not None:
             input = input.cuda(args.gpu, non_blocking=True)
         all_targets.append(target)
+        all_targets_real.append(target_real)
         target = target.cuda(args.gpu, non_blocking=True)
         target_real = target_real.cuda(args.gpu, non_blocking=True)
         # compute output
@@ -403,6 +406,8 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
         all_preds.append(pred.detach().cpu().numpy())
     all_grads = np.vstack(all_grads)
     all_targets = np.hstack(all_targets)
+    all_targets_real = np.hstack(all_targets_real)
+
     all_preds = np.hstack(all_preds)
 
 
@@ -429,8 +434,11 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
     log_training.write('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
     print('epoch %d train acc: %f\n'%(epoch, top1.avg))
     print('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
-    if args.use_preds:
+    if args.label_type == "pred":
         return all_grads, all_preds
-    return all_grads, all_targets
+    elif args.label_type == "noisy":
+        return all_grads, all_targets
+    else:
+        return all_grads, all_targets_real
 if __name__ == '__main__':
     main()
