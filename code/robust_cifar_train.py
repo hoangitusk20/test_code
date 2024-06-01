@@ -205,11 +205,12 @@ def main_worker(gpu, ngpus_per_node, args):
         train_dataset.switch_data()
         #FL_part
         grads_all, labels = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)#!!!
+        unique_preds = np.unique(labels)
         if args.use_crust and epoch > args.crust_start:
             #per class clustering
             ssets = []
             weights = []
-            for c in range(args.num_classes):
+            for c in unique_preds:
                 sample_ids = np.where((labels == c) == True)[0] #!!!
                 grads = grads_all[sample_ids]
 
