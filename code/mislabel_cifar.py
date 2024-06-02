@@ -5,6 +5,7 @@ import torchvision.transforms as transform
 import numpy as np
 import copy
 import warnings
+import pandas as pd
 
 class MISLABELCIFAR10(torchvision.datasets.CIFAR10):
 
@@ -108,12 +109,10 @@ class MISLABELCIFAR10(torchvision.datasets.CIFAR10):
 
         print(count_dict)
     def print_real_class_dis(self):
-        targets_np = np.array(self.real_targets)
-        unique_values, counts = np.unique(targets_np, return_counts=True)
-
-        # Combine the results into a dictionary
-        count_dict = dict(zip(unique_values, counts))
-        print(count_dict)
+        data = {'target':self.targets, 'real_target': self.real_targets}
+        target_df = pd.DataFrame(data=data)
+        real_target_dis = target_df.groupby('target')['real_target'].sum()
+        print(real_target_dis)
 
 
     def fetch(self, targets): # Chọn ra data từ target, sample đúng với target nhưng lấy ngẫu nhiên (Dòng 109)

@@ -232,7 +232,7 @@ def main_worker(gpu, ngpus_per_node, args):
             label_acc = train_dataset.estimate_label_acc()
             print("Number label of each class in coreset:")
             train_dataset.print_class_dis()
-            print("Number real label of each class in coreset:")
+            print('Real label in coreset:')
             train_dataset.print_real_class_dis()
             tf_writer.add_scalar('label acc ',label_acc, epoch)
             log_training.write('epoch %d label acc: %f\n'%(epoch, label_acc))
