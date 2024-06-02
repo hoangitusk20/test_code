@@ -398,7 +398,12 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
         # compute output
         output, feat = model(input)
         _, pred = torch.max(output, 1)
-        loss = criterion(output, target).mean()
+        if args.label_type == "pred":
+            loss = criterion(output, pred).mean()
+        elif args.label_type == "noisy":
+            loss = criterion(output, target).mean()
+        else:
+            loss = criterion(output, target_real).mean()
         acc1, acc5 = accuracy(output, target_real, topk=(1, 5))
         acc1_on_noisy, acc5_on_noisy = accuracy(output, target, topk=(1, 5))
         top1.update(acc1[0], input.size(0))
@@ -422,7 +427,7 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
     log_training.write('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
     print('epoch %d train acc: %f\n'%(epoch, top1.avg))
     print('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
-    if args.label_type == "pred":
+    if args.label_type == "pred":    
         return all_grads, all_preds
     elif args.label_type == "noisy":
         return all_grads, all_targets
