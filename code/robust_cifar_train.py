@@ -214,6 +214,7 @@ def main_worker(gpu, ngpus_per_node, args):
             ssets = []
             weights = []
             for c in unique_preds:
+                print(c)
                 sample_ids = np.where((labels == c) == True)[0] #!!!
                 grads = grads_all[sample_ids]
 
