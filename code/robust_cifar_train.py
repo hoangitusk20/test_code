@@ -410,25 +410,11 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
 
     all_preds = np.hstack(all_preds)
 
-
-    # In kiểu dữ liệu, kích thước và giá trị của all_targets
-    print("all_targets:")
-    print(f"Type: {type(all_targets)}")
-    print(f"Shape: {all_targets.shape}")
-    print(f"Values: {all_targets}")
-
-    # In kiểu dữ liệu, kích thước và giá trị của all_preds
-    print("all_preds:")
-    print(f"Type: {type(all_preds)}")
-    print(f"Shape: {all_preds.shape}")
-    print(f"Values: {all_preds}")
-
     # In ra số phần tử khác nhau trong all_preds
-    unique_preds = np.unique(all_preds)
-    print(f"Number of unique elements in all_preds: {len(unique_preds)}")
-    print(f"Unique elements in all_preds: {unique_preds}")
-
-
+    unique_preds, counts = np.unique(all_preds, return_counts=True)
+    count_dict = dict(zip(unique_preds, counts))
+    print("Number label of each class in predict:")
+    print(count_dict)
 
     log_training.write('epoch %d train acc: %f\n'%(epoch, top1.avg))
     log_training.write('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
