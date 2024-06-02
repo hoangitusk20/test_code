@@ -111,7 +111,7 @@ class MISLABELCIFAR10(torchvision.datasets.CIFAR10):
     def print_real_class_dis(self):
         data = {'target':self.targets, 'real_target': self.real_targets}
         target_df = pd.DataFrame(data=data)
-        real_target_dis = target_df.groupby('target')['real_target'].sum()
+        real_target_dis = target_df.groupby(['target', 'real_target'] )['real_target'].count()
         print(real_target_dis)
 
 
