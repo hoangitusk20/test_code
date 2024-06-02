@@ -217,18 +217,22 @@ def main_worker(gpu, ngpus_per_node, args):
                 print(c)
                 sample_ids = np.where((labels == c) == True)[0] #!!!
                 grads = grads_all[sample_ids]
-
+                print("Calculating distance...")
                 dists = pairwise_distances(grads)
+                print("Calculate distance finish!")
                 weight = np.sum(dists < args.r, axis = 1)#!!!
                 V = range(len(grads)) 
                 F = FacilityLocationCIFAR(V, D = dists)
                 B = int(args.fl_ratio * len(grads))
+                print("Choosing coreset...")
                 sset, vals = lazy_greedy_heap(F,V,B)
+                print("Choosing coreset finish!")
                 if len(list(sset))>0:
                     weights.extend(weight[sset].tolist())
                     sset = sample_ids[np.array(sset)]
                     ssets += list(sset)
             weights = torch.FloatTensor(weights)
+            print("Adjust dataset..")
             train_dataset.adjust_base_indx_temp(ssets)
             label_acc = train_dataset.estimate_label_acc()
             print("=======================")
