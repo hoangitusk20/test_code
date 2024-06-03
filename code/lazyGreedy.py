@@ -28,9 +28,10 @@ def lazy_greedy_heap(F, V, B):
     heapq._heapify_max(order)
 
     # Khởi tạo heap là tổng khoảng cách từ 1 điểm đến tất cả các điểm còn lại
+    print("initializing heap")
     for index in V:
         _heappush_max(order, (F.inc(sset, index), index))
-
+    print("finsh!")
     while order and len(sset) < B:
         if F.curVal == len(F.D): #????
             #all points covered
