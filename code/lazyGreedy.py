@@ -32,13 +32,18 @@ def lazy_greedy_heap(F, V, B):
     for index in V:
         _heappush_max(order, (F.inc(sset, index), index))
     print("finsh!")
+    for i in range(B):
+        el =_heappop_max(order)
+        sset.append(el[1])
+    
+    return sset,vals
+
     while order and len(sset) < B:
         if F.curVal == len(F.D): #????
             #all points covered
             break
         el = _heappop_max(order) # Phần tử cung cấp giá trị lớn nhất
         improv = F.inc(sset,el[1]) # 
-
         if improv > 0 : #Liệu có thể < 0 được không?
             if not order:
                 curVal = F.add(sset, el[1], improv) #curVal hình như cũng không dùng vào đâu
