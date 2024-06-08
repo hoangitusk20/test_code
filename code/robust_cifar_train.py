@@ -214,28 +214,21 @@ def main_worker(gpu, ngpus_per_node, args):
             ssets = []
             weights = []
             for c in unique_preds:
-                print(c)
                 sample_ids = np.where((labels == c) == True)[0] #!!!
                 grads = grads_all[sample_ids]
-                print("Calculating distance...")
                 dists = pairwise_distances(grads)
-                print("Calculate distance finish!")
                 weight = np.sum(dists < args.r, axis = 1)#!!!
                 V = range(len(grads)) 
                 F = FacilityLocationCIFAR(V, D = dists)
                 B = int(args.fl_ratio * len(grads))
-                print("Choosing coreset...")
                 sset, vals = lazy_greedy_heap(F,V,B)
-                print("Choosing coreset finish!")
                 if len(list(sset))>0:
                     weights.extend(weight[sset].tolist())
                     sset = sample_ids[np.array(sset)]
                     ssets += list(sset)
             weights = torch.FloatTensor(weights)
-            print("Adjust dataset..")
             train_dataset.adjust_base_indx_temp(ssets)
             label_acc = train_dataset.estimate_label_acc()
-            print("=======================")
             #train_dataset.print_class_dis()
             #train_dataset.print_real_class_dis()
             tf_writer.add_scalar('label acc ',label_acc, epoch)
@@ -425,8 +418,8 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
     # In ra số phần tử khác nhau trong all_preds
     unique_preds, counts = np.unique(all_preds, return_counts=True)
     count_dict = dict(zip(unique_preds, counts))
-    print("Number label of each class in predict:")
-    print(count_dict)
+    #print("Number label of each class in predict:")
+    #print(count_dict)
 
     log_training.write('epoch %d train acc: %f\n'%(epoch, top1.avg))
     log_training.write('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
