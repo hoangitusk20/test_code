@@ -30,7 +30,6 @@ def lazy_greedy_heap(F, V, B):
     # Khởi tạo heap là tổng khoảng cách từ 1 điểm đến tất cả các điểm còn lại
     for index in V:
         _heappush_max(order, (F.inc(sset, index), index))
-    print("finsh!")
     for i in range(B):
         el =_heappop_max(order)
         sset.append(el[1])
