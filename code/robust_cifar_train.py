@@ -203,10 +203,19 @@ def main_worker(gpu, ngpus_per_node, args):
 
     weights = [1] * len(train_dataset) #?? Dong 206
     weights = torch.FloatTensor(weights)#??
-
     for epoch in range(args.start_epoch, args.epochs):
         train_dataset.switch_data()
-        grads_all, labels = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)#!!!
+        grads_all, all_preds, all_targets, all_targets_real = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
+        if args.label_type == "pred":  
+          labels = all_preds
+        elif args.label_type == "noisy":
+          labels = all_targets
+        else:
+          labels = all_targets_real
+        if epoch ==4 or epoch % 19 == 1:
+          np.savetxt('grad_epoch_'+epoch+'.csv', grads_all, delimiter=',')
+          np.savetxt('all_targets_'+epoch+'.csv', all_targets, delimiter=',')
+          np.savetxt('all_targets_real_'+epoch+'.csv', all_targets_real, delimiter=',')
         unique_preds = np.unique(labels)
         if args.use_crust and epoch > args.crust_start:
             #FL_part
@@ -425,6 +434,7 @@ def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
     log_training.write('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
     print('epoch %d train acc: %f\n'%(epoch, top1.avg))
     print('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
+    return all_grads, all_preds, all_targets, all_targets_real
     if args.label_type == "pred":    
         return all_grads, all_preds
     elif args.label_type == "noisy":
