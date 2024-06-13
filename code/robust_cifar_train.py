@@ -212,10 +212,10 @@ def main_worker(gpu, ngpus_per_node, args):
           labels = all_targets
         else:
           labels = all_targets_real
-        if epoch ==4 or epoch % 19 == 1:
-          np.savetxt('grad_epoch_'+epoch+'.csv', grads_all, delimiter=',')
-          np.savetxt('all_targets_'+epoch+'.csv', all_targets, delimiter=',')
-          np.savetxt('all_targets_real_'+epoch+'.csv', all_targets_real, delimiter=',')
+        if epoch ==4 or epoch % 20 == 19:
+          np.savetxt('grad_epoch_'+str(epoch)+'.csv', grads_all, delimiter=',')
+          np.savetxt('all_targets_'+str(epoch)+'.csv', all_targets, delimiter=',')
+          np.savetxt('all_targets_real_'+str(epoch)+'.csv', all_targets_real, delimiter=',')
         unique_preds = np.unique(labels)
         if args.use_crust and epoch > args.crust_start:
             #FL_part
