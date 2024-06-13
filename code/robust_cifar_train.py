@@ -216,6 +216,7 @@ def main_worker(gpu, ngpus_per_node, args):
           np.savetxt('grad_epoch_'+str(epoch)+'.csv', grads_all, delimiter=',')
           np.savetxt('all_targets_'+str(epoch)+'.csv', all_targets, delimiter=',')
           np.savetxt('all_targets_real_'+str(epoch)+'.csv', all_targets_real, delimiter=',')
+          np.savetxt('all_preds_'+str(epoch)+'.csv', all_preds, delimiter=',')
         unique_preds = np.unique(labels)
         if args.use_crust and epoch > args.crust_start:
             #FL_part
