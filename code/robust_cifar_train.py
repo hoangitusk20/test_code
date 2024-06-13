@@ -212,7 +212,7 @@ def main_worker(gpu, ngpus_per_node, args):
           labels = all_targets
         else:
           labels = all_targets_real
-        if epoch ==4 or epoch % 20 == 19:
+        if epoch ==4 or epoch % 20 == 0:
           np.savetxt('grad_epoch_'+str(epoch)+'.csv', grads_all, delimiter=',')
           np.savetxt('all_targets_'+str(epoch)+'.csv', all_targets, delimiter=',')
           np.savetxt('all_targets_real_'+str(epoch)+'.csv', all_targets_real, delimiter=',')
