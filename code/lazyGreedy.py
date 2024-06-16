@@ -61,8 +61,8 @@ def lazy_greedy_heap(F, V, B):
 
     return sset,vals
 
-def algo1(V,D):
-    k = len(V)
+def algo1(B,D):
+    k = B
     sorted_matrix = np.sort(D, axis=1)
     k_smallest_elements = sorted_matrix[:, :k]
     sum_k_smallest = np.sum(k_smallest_elements, axis=1)
