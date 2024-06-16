@@ -20,7 +20,7 @@ import copy
 from torch.utils.tensorboard import SummaryWriter
 from torch.autograd import grad
 from fl_cifar import FacilityLocationCIFAR
-from lazyGreedy import lazy_greedy_heap
+from lazyGreedy import lazy_greedy_heap, algo1
 from utils import *
 from mislabel_cifar import MISLABELCIFAR10, MISLABELCIFAR100
 
