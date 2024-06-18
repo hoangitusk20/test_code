@@ -1,4 +1,6 @@
 import heapq
+import numpy as np
+
 ############????
 def _heappush_max(heap,item): # Thêm 1 phần tử mới vào heap
     heap.append(item)
@@ -59,3 +61,10 @@ def lazy_greedy_heap(F, V, B):
 
     return sset,vals
 
+def algo1(B,D):
+    k = B
+    sorted_matrix = np.sort(D, axis=1)
+    k_smallest_elements = sorted_matrix[:, :k]
+    sum_k_smallest = np.sum(k_smallest_elements, axis=1)
+    sset = np.argsort(sum_k_smallest)[:k]
+    return sset

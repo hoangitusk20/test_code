@@ -20,7 +20,7 @@ import copy
 from torch.utils.tensorboard import SummaryWriter
 from torch.autograd import grad
 from fl_cifar import FacilityLocationCIFAR
-from lazyGreedy import lazy_greedy_heap
+from lazyGreedy import lazy_greedy_heap, algo1
 from utils import *
 from mislabel_cifar import MISLABELCIFAR10, MISLABELCIFAR100
 
@@ -216,6 +216,7 @@ def main_worker(gpu, ngpus_per_node, args):
           np.savetxt('grad_epoch_'+str(epoch)+'.csv', grads_all, delimiter=',')
           np.savetxt('all_targets_'+str(epoch)+'.csv', all_targets, delimiter=',')
           np.savetxt('all_targets_real_'+str(epoch)+'.csv', all_targets_real, delimiter=',')
+          np.savetxt('all_preds_'+str(epoch)+'.csv', all_preds, delimiter=',')
         unique_preds = np.unique(labels)
         if args.use_crust and epoch > args.crust_start:
             #FL_part
@@ -227,10 +228,11 @@ def main_worker(gpu, ngpus_per_node, args):
                 grads = grads_all[sample_ids]
                 dists = pairwise_distances(grads)
                 weight = np.sum(dists < args.r, axis = 1)#!!!
-                V = range(len(grads)) 
-                F = FacilityLocationCIFAR(V, D = dists)
+                #V = range(len(grads)) 
+                #F = FacilityLocationCIFAR(V, D = dists)
                 B = int(args.fl_ratio * len(grads))
-                sset, vals = lazy_greedy_heap(F,V,B)
+                #sset, vals = lazy_greedy_heap(F,V,B)
+                sset = algo1(B,dists)
                 if len(list(sset))>0:
                     weights.extend(weight[sset].tolist())
                     sset = sample_ids[np.array(sset)]
