@@ -79,7 +79,7 @@ parser.add_argument('--crust-start',type=int,default=5)
 
 parser.add_argument('--rand-number',type=int, default=0,
                     help='Ratio for number of facilities.') ###?????
-
+parser.add_argument('--algo',type=str,default='algo1')
 
 best_acc1 = 0
 
@@ -228,11 +228,13 @@ def main_worker(gpu, ngpus_per_node, args):
                 grads = grads_all[sample_ids]
                 dists = pairwise_distances(grads)
                 weight = np.sum(dists < args.r, axis = 1)#!!!
-                #V = range(len(grads)) 
-                #F = FacilityLocationCIFAR(V, D = dists)
                 B = int(args.fl_ratio * len(grads))
-                #sset, vals = lazy_greedy_heap(F,V,B)
-                sset = algo1(B,dists)
+                if args.algo == "lazy_greedy":
+                    V = range(len(grads)) 
+                    F = FacilityLocationCIFAR(V, D = dists)
+                    sset, vals = lazy_greedy_heap(F,V,B)
+                else: 
+                    sset = algo1(B,dists)
                 if len(list(sset))>0:
                     weights.extend(weight[sset].tolist())
                     sset = sample_ids[np.array(sset)]
