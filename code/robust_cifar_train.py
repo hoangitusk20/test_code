@@ -38,6 +38,8 @@ parser.add_argument('-j','--workers', default=4, type=int, metavar='N',
                     help='number of data loading worker (deafault: 4)')
 parser.add_argument('--epochs', type=int, default=120, metavar='N',
                     help='number of total epochs to run')
+parser.add_argument('--stop-epoch', type=int, default=120, metavar='N',
+                    help='stop using crust after epoch')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restart)')
 parser.add_argument('-b','--batch-size', default=128, type=int,metavar='N',
@@ -80,6 +82,7 @@ parser.add_argument('--crust-start',type=int,default=5)
 parser.add_argument('--rand-number',type=int, default=0,
                     help='Ratio for number of facilities.') ###?????
 parser.add_argument('--algo',type=str,default='algo1')
+
 
 best_acc1 = 0
 
@@ -218,7 +221,7 @@ def main_worker(gpu, ngpus_per_node, args):
           np.savetxt('all_targets_real_'+str(epoch)+'.csv', all_targets_real, delimiter=',')
           np.savetxt('all_preds_'+str(epoch)+'.csv', all_preds, delimiter=',')
         unique_preds = np.unique(labels)
-        if args.use_crust and epoch > args.crust_start:
+        if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:
             #FL_part
             #per class clustering
             ssets = []
@@ -250,7 +253,7 @@ def main_worker(gpu, ngpus_per_node, args):
             print('change train loader')
 
         #train for one epoch
-        if args.use_crust and epoch > args.crust_start:#???
+        if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:#???
             train(train_loader,model, criterion,weights,optimizer,epoch,args,log_training,tf_writer,fetch = True)#!!!
         else:
             train(train_loader,model, criterion,weights,optimizer,epoch,args,log_training,tf_writer,fetch=False)
