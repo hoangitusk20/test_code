@@ -82,7 +82,7 @@ parser.add_argument('--crust-start',type=int,default=5)
 parser.add_argument('--rand-number',type=int, default=0,
                     help='Ratio for number of facilities.') ###?????
 parser.add_argument('--algo',type=str,default='algo1')
-parser.add_argument('--crust_stop',type=str,default='120')
+parser.add_argument('--crust_stop',type=str,default=120)
 
 best_acc1 = 0
 
