@@ -245,13 +245,13 @@ def main_worker(gpu, ngpus_per_node, args):
                       ssets += list(sset)
               weights = torch.FloatTensor(weights)
               train_dataset.adjust_base_indx_temp(ssets)
-              label_acc = train_dataset.estimate_label_acc()
+            label_acc = train_dataset.estimate_label_acc()
               #train_dataset.print_class_dis()
               #train_dataset.print_real_class_dis()
-              tf_writer.add_scalar('label acc ',label_acc, epoch)
-              log_training.write('epoch %d label acc: %f\n'%(epoch, label_acc))
-              print('epoch %d label acc: %f\n'%(epoch, label_acc))
-              print('change train loader')
+            tf_writer.add_scalar('label acc ',label_acc, epoch)
+            log_training.write('epoch %d label acc: %f\n'%(epoch, label_acc))
+            print('epoch %d label acc: %f\n'%(epoch, label_acc))
+            print('change train loader')
 
         #train for one epoch
         if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:#???
