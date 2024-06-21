@@ -82,7 +82,7 @@ parser.add_argument('--crust-start',type=int,default=5)
 parser.add_argument('--rand-number',type=int, default=0,
                     help='Ratio for number of facilities.') ###?????
 parser.add_argument('--algo',type=str,default='algo1')
-
+parser.add_argument('--crust_stop',type=str,default='120')
 
 best_acc1 = 0
 
@@ -207,50 +207,51 @@ def main_worker(gpu, ngpus_per_node, args):
     weights = [1] * len(train_dataset) #?? Dong 206
     weights = torch.FloatTensor(weights)#??
     for epoch in range(args.start_epoch, args.epochs):
-        train_dataset.switch_data()
-        grads_all, all_preds, all_targets, all_targets_real = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
-        if args.label_type == "pred":  
-          labels = all_preds
-        elif args.label_type == "noisy":
-          labels = all_targets
-        else:
-          labels = all_targets_real
-        if epoch ==4 or epoch % 20 == 0:
-          np.savetxt('grad_epoch_'+str(epoch)+'.csv', grads_all, delimiter=',')
-          np.savetxt('all_targets_'+str(epoch)+'.csv', all_targets, delimiter=',')
-          np.savetxt('all_targets_real_'+str(epoch)+'.csv', all_targets_real, delimiter=',')
-          np.savetxt('all_preds_'+str(epoch)+'.csv', all_preds, delimiter=',')
-        unique_preds = np.unique(labels)
-        if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:
-            #FL_part
-            #per class clustering
-            ssets = []
-            weights = []
-            for c in unique_preds:
-                sample_ids = np.where((labels == c) == True)[0] #!!!
-                grads = grads_all[sample_ids]
-                dists = pairwise_distances(grads)
-                weight = np.sum(dists < args.r, axis = 1)#!!!
-                B = int(args.fl_ratio * len(grads))
-                if args.algo == "lazy_greedy":
-                    V = range(len(grads)) 
-                    F = FacilityLocationCIFAR(V, D = dists)
-                    sset, vals = lazy_greedy_heap(F,V,B)
-                else: 
-                    sset = algo1(B,dists)
-                if len(list(sset))>0:
-                    weights.extend(weight[sset].tolist())
-                    sset = sample_ids[np.array(sset)]
-                    ssets += list(sset)
-            weights = torch.FloatTensor(weights)
-            train_dataset.adjust_base_indx_temp(ssets)
-            label_acc = train_dataset.estimate_label_acc()
-            #train_dataset.print_class_dis()
-            #train_dataset.print_real_class_dis()
-            tf_writer.add_scalar('label acc ',label_acc, epoch)
-            log_training.write('epoch %d label acc: %f\n'%(epoch, label_acc))
-            print('epoch %d label acc: %f\n'%(epoch, label_acc))
-            print('change train loader')
+        if epoch < args.crust_stop:
+          train_dataset.switch_data()
+          grads_all, all_preds, all_targets, all_targets_real = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
+          if args.label_type == "pred":  
+            labels = all_preds
+          elif args.label_type == "noisy":
+            labels = all_targets
+          else:
+            labels = all_targets_real
+          if epoch ==4 or epoch % 20 == 0:
+            np.savetxt('grad_epoch_'+str(epoch)+'.csv', grads_all, delimiter=',')
+            np.savetxt('all_targets_'+str(epoch)+'.csv', all_targets, delimiter=',')
+            np.savetxt('all_targets_real_'+str(epoch)+'.csv', all_targets_real, delimiter=',')
+            np.savetxt('all_preds_'+str(epoch)+'.csv', all_preds, delimiter=',')
+          unique_preds = np.unique(labels)
+          if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:
+              #FL_part
+              #per class clustering
+              ssets = []
+              weights = []
+              for c in unique_preds:
+                  sample_ids = np.where((labels == c) == True)[0] #!!!
+                  grads = grads_all[sample_ids]
+                  dists = pairwise_distances(grads)
+                  weight = np.sum(dists < args.r, axis = 1)#!!!
+                  B = int(args.fl_ratio * len(grads))
+                  if args.algo == "lazy_greedy":
+                      V = range(len(grads)) 
+                      F = FacilityLocationCIFAR(V, D = dists)
+                      sset, vals = lazy_greedy_heap(F,V,B)
+                  else: 
+                      sset = algo1(B,dists)
+                  if len(list(sset))>0:
+                      weights.extend(weight[sset].tolist())
+                      sset = sample_ids[np.array(sset)]
+                      ssets += list(sset)
+              weights = torch.FloatTensor(weights)
+              train_dataset.adjust_base_indx_temp(ssets)
+              label_acc = train_dataset.estimate_label_acc()
+              #train_dataset.print_class_dis()
+              #train_dataset.print_real_class_dis()
+              tf_writer.add_scalar('label acc ',label_acc, epoch)
+              log_training.write('epoch %d label acc: %f\n'%(epoch, label_acc))
+              print('epoch %d label acc: %f\n'%(epoch, label_acc))
+              print('change train loader')
 
         #train for one epoch
         if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:#???
