@@ -68,3 +68,65 @@ def algo1(B,D):
     sum_k_smallest = np.sum(k_smallest_elements, axis=1)
     sset = np.argsort(sum_k_smallest)[:k]
     return sset
+
+import numpy as np
+
+def k_medoids(D, k, max_iter=300):
+    """
+    K-medoids algorithm to find k medoids from a distance matrix D.
+    
+    Parameters:
+    D (numpy array): Distance matrix of shape (n, n)
+    k (int): Number of medoids to find
+    max_iter (int): Maximum number of iterations
+    
+    Returns:
+    medoids (list): Indices of the k medoids
+    clusters (list): List of clusters with indices of the points
+    """
+    
+    n = D.shape[0]
+    
+    # Initialize medoids randomly
+    medoids = np.random.choice(n, k, replace=False)
+    
+    for iteration in range(max_iter):
+        # Assign each point to the nearest medoid
+        clusters = [[] for _ in range(k)]
+        for i in range(n):
+            distances_to_medoids = D[i, medoids]
+            nearest_medoid_index = np.argmin(distances_to_medoids)
+            clusters[nearest_medoid_index].append(i)
+        
+        new_medoids = np.zeros(k, dtype=int)
+        
+        # Update medoids
+        for i in range(k):
+            cluster = clusters[i]
+            if len(cluster) == 0:  # handle empty clusters
+                continue
+            
+            # Calculate the total distance from each point in the cluster to all other points in the cluster
+            intra_cluster_distances = D[np.ix_(cluster, cluster)]
+            total_distances = np.sum(intra_cluster_distances, axis=1)
+            
+            # Select the point with the minimum total distance as the new medoid
+            new_medoid_index = np.argmin(total_distances)
+            new_medoids[i] = cluster[new_medoid_index]
+        
+        # Check for convergence (if medoids do not change)
+        if np.array_equal(medoids, new_medoids):
+            break
+        
+        medoids = new_medoids
+    
+    return medoids#, clusters
+
+# Example usage:
+# Assume D is a precomputed distance matrix
+# k = number of clusters
+# D = np.array([...])
+# k = 3
+# medoids, clusters = k_medoids(D, k)
+# print("Medoids:", medoids)
+# print("Clusters:", clusters)
