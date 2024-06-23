@@ -237,6 +237,8 @@ def main_worker(gpu, ngpus_per_node, args):
                       V = range(len(grads)) 
                       F = FacilityLocationCIFAR(V, D = dists)
                       sset, vals = lazy_greedy_heap(F,V,B)
+                  elif args.algo =='k_medoids':
+                      sset = k_medoids(D,B)
                   else: 
                       sset = algo1(B,dists)
                   if len(list(sset))>0:
