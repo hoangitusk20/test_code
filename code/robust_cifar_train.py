@@ -196,7 +196,7 @@ def main_worker(gpu, ngpus_per_node, args):
         return
     
     lr_schedular = torch.optim.lr_scheduler.MultiStepLR(optimizer, ##!!!!
-                    milestones = [80,100], last_epoch = args.start_epoch - 1)
+                    milestones = [40,80], last_epoch = args.start_epoch - 1)
     
     #init log for training #!!!
     log_training = open(os.path.join(args.root_log, args.store_name,'log.csv'),'w')
