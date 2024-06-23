@@ -231,7 +231,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   sample_ids = np.where((labels == c) == True)[0] #!!!
                   grads = grads_all[sample_ids]
                   dists = pairwise_distances(grads)
-                  weight = np.sum(dists < args.r, axis = 1)#!!!
+                  weight = np.sum(dists >0, axis = 1)#!!!
                   B = int(args.fl_ratio * len(grads))
                   if args.algo == "lazy_greedy":
                       V = range(len(grads)) 
@@ -297,7 +297,6 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
     for i,batch in enumerate(train_loader):
         input, target, target_real, index = batch
         if fetch:
-            pass
             input_b =  train_loader.dataset.fetch(target)
             lam = np.random.beta(1, 0.1)
             input = lam * input + (1 - lam) * input_b   
