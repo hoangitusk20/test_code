@@ -69,7 +69,7 @@ parser.add_argument('--use_crust', action='store_true',
 
 parser.add_argument('--label-type', type=str, default='noisy',
                     help='noisy/pred/correct')
-
+parser.add_argument('--sub-dataset', type=float, default=1.0)
 
 parser.add_argument('--r',default=2.0, type=float,
                     help='Distance threshsold (i.e. radius) in caculating clusters.')
@@ -203,7 +203,7 @@ def main_worker(gpu, ngpus_per_node, args):
     with open(os.path.join(args.root_log, args.store_name,'args.txt'),'w') as f:
         f.write(str(args))
     tf_writer = SummaryWriter(log_dir = os.path.join(args.root_log, args.store_name)) #!!!
-
+    train_dataset.split_data(args.sub_dataset)
     weights = [1] * len(train_dataset) #?? Dong 206
     weights = torch.FloatTensor(weights)#??
     for epoch in range(args.start_epoch, args.epochs):
@@ -237,8 +237,6 @@ def main_worker(gpu, ngpus_per_node, args):
                       V = range(len(grads)) 
                       F = FacilityLocationCIFAR(V, D = dists)
                       sset, vals = lazy_greedy_heap(F,V,B)
-                  elif args.algo =='k_medoids':
-                      sset = k_medoids(D,B)
                   else: 
                       sset = algo1(B,dists)
                   if len(list(sset))>0:
