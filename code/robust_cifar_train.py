@@ -221,7 +221,7 @@ def main_worker(gpu, ngpus_per_node, args):
         train_dataset.print_real_class_dis()
         print('label acc: ', label_acc)
     for epoch in range(args.start_epoch, args.epochs):
-        if epoch < args.crust_stop:
+        if epoch < args.crust_stop and not(args.coreset_file):
           train_dataset.switch_data()
           grads_all, all_preds, all_targets, all_targets_real = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
           if args.label_type == "pred":  
