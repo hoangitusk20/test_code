@@ -305,9 +305,9 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
             input_b =  train_loader.dataset.fetch(target)
             lam = np.random.beta(1, 0.1)
             input = lam * input + (1 - lam) * input_b   
-        c_weigths = weights[index]
-        c_weigths = c_weigths.type(torch.FloatTensor)
-        c_weigths =  c_weigths / c_weigths.sum()
+        c_weights = weights[index]
+        c_weights = c_weights.type(torch.FloatTensor)
+        c_weights =  c_weights / c_weights.sum()
         if args.gpu is not None:
             c_weigths = c_weigths.to(args.gpu, non_blocking = True) # So sanh voi dong 285, Khi nao dung cuda?
 
@@ -322,7 +322,7 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
         # compute output
         output, feats = model(input)
         loss = criterion(output, target)
-        loss = (loss * c_weigths).sum()
+        #loss = (loss * c_weights).sum()
 
         # measure accuracy and record loss #!!!
         acc1, acc5 = accuracy(output, target, topk=(1,5))
