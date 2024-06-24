@@ -244,6 +244,9 @@ def main_worker(gpu, ngpus_per_node, args):
                       weights.extend(weight[sset].tolist())
                       sset = sample_ids[np.array(sset)]
                       ssets += list(sset)
+              if epoch == args.crust_stop - 1:
+                  np_ssets = np.array(ssets)
+                  np.savetxt('coreset.csv', np_ssets, delimiter=',')
               weights = torch.FloatTensor(weights)
               train_dataset.adjust_base_indx_temp(ssets)
               label_acc = train_dataset.estimate_label_acc()
