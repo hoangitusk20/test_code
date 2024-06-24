@@ -5,6 +5,7 @@ import sys
 import time
 import warnings
 import numpy as np
+import pandas as pd
 from sklearn.metrics import pairwise_distances
 import torch    
 import torch.nn as nn
@@ -83,6 +84,8 @@ parser.add_argument('--rand-number',type=int, default=0,
                     help='Ratio for number of facilities.') ###?????
 parser.add_argument('--algo',type=str,default='algo1')
 parser.add_argument('--crust_stop',type=int,default=120)
+
+parser.add_argument('--coreset_file', type=str, default=None)
 
 best_acc1 = 0
 
@@ -203,10 +206,13 @@ def main_worker(gpu, ngpus_per_node, args):
     with open(os.path.join(args.root_log, args.store_name,'args.txt'),'w') as f:
         f.write(str(args))
     tf_writer = SummaryWriter(log_dir = os.path.join(args.root_log, args.store_name)) #!!!
+    train_dataset.change_data('all_targets.csv')
     train_dataset.split_data(args.sub_dataset)
     train_dataset.switch_data()
     weights = [1] * len(train_dataset) #?? Dong 206
     weights = torch.FloatTensor(weights)#??
+    if args.coreset_file:
+        coreset = np.array(pd.read_csv(args.coreset_file, header=None).astype(int)).reshape(-1).tolist()
     for epoch in range(args.start_epoch, args.epochs):
         if epoch < args.crust_stop:
           train_dataset.switch_data()
@@ -223,7 +229,14 @@ def main_worker(gpu, ngpus_per_node, args):
             np.savetxt('all_targets_real_'+str(epoch)+'.csv', all_targets_real, delimiter=',')
             np.savetxt('all_preds_'+str(epoch)+'.csv', all_preds, delimiter=',')
           unique_preds = np.unique(labels)
-          if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:
+          
+          if args.coreset_file:
+              train_dataset.adjust_base_indx_temp(coreset)
+              label_acc = train_dataset.estimate_label_acc()
+              train_dataset.print_class_dis()
+              train_dataset.print_real_class_dis()
+              print('label acc: ', label_acc)
+          elif args.use_crust and epoch > args.crust_start:
               #FL_part
               #per class clustering
               ssets = []
