@@ -316,7 +316,7 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
     for i,batch in enumerate(train_loader):
         input, target, target_real, index = batch
         if fetch:
-            #pass
+            pass
             input_b =  train_loader.dataset.fetch(target)
             lam = np.random.beta(1, 0.1)
             input = lam * input + (1 - lam) * input_b   
