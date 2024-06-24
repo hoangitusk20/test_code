@@ -204,6 +204,7 @@ def main_worker(gpu, ngpus_per_node, args):
         f.write(str(args))
     tf_writer = SummaryWriter(log_dir = os.path.join(args.root_log, args.store_name)) #!!!
     train_dataset.split_data(args.sub_dataset)
+    train_dataset.switch_data()
     weights = [1] * len(train_dataset) #?? Dong 206
     weights = torch.FloatTensor(weights)#??
     for epoch in range(args.start_epoch, args.epochs):
