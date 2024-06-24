@@ -65,6 +65,10 @@ class MISLABELCIFAR10(torchvision.datasets.CIFAR10):
         self.whole_data = self.whole_data[::stride]
         self.whole_real_targets = self.whole_real_targets[::stride]
         self.whole_targets = self.whole_targets[::stride]
+        
+    def change_data(self, file_name):
+        targets = np.array(pd.read_csv(file_name, header=None).astype(int)).reshape(-1).tolist()
+        self.whole_targets = targets
 
     def adjust_base_indx_temp(self, idx): #Thay đổi data và target mới (Lựa chọn tập con) dựa trên idx, Vẫn có thể khôi phục dữ liệu
 
