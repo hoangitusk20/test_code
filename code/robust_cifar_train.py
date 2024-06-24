@@ -207,7 +207,8 @@ def main_worker(gpu, ngpus_per_node, args):
     with open(os.path.join(args.root_log, args.store_name,'args.txt'),'w') as f:
         f.write(str(args))
     tf_writer = SummaryWriter(log_dir = os.path.join(args.root_log, args.store_name)) #!!!
-    train_dataset.change_data(args.root_data)
+    if root_data:
+        train_dataset.change_data(args.root_data)
     train_dataset.split_data(args.sub_dataset)
     train_dataset.switch_data()
     weights = [1] * len(train_dataset) #?? Dong 206
