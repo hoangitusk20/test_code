@@ -242,7 +242,7 @@ def main_worker(gpu, ngpus_per_node, args):
               print("finding coreset")
               #per class clustering
               ssets = []
-              weights = []
+              #weights = []
               for c in unique_preds:
                   sample_ids = np.where((labels == c) == True)[0] #!!!
                   grads = grads_all[sample_ids]
