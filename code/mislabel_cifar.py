@@ -61,11 +61,10 @@ class MISLABELCIFAR10(torchvision.datasets.CIFAR10):
         self.real_targets = self.whole_real_targets
     
     def split_data(self, c):
-        length = self.whole_data.size
-        split_size = int(length * c)
-        self.targets = self.whole_targets[:split_size]
-        self.data = self.whole_data[:split_size]
-        self.real_targets = self.whole_real_targets[:split_size]
+        stride = int(1 / c)
+        self.whole_data = self.whole_data[::stride]
+        self.whole_real_targets = self.whole_real_targets[::stride]
+        self.whole_targets = self.whole_targets[::stride]
 
     def adjust_base_indx_temp(self, idx): #Thay đổi data và target mới (Lựa chọn tập con) dựa trên idx, Vẫn có thể khôi phục dữ liệu
 
