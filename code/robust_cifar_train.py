@@ -214,6 +214,11 @@ def main_worker(gpu, ngpus_per_node, args):
     weights = torch.FloatTensor(weights)#??
     if args.coreset_file:
         coreset = np.array(pd.read_csv(args.coreset_file, header=None).astype(int)).reshape(-1).tolist()
+        train_dataset.adjust_base_indx_temp(coreset)
+        label_acc = train_dataset.estimate_label_acc()
+        train_dataset.print_class_dis()
+        train_dataset.print_real_class_dis()
+        print('label acc: ', label_acc)
     for epoch in range(args.start_epoch, args.epochs):
         if epoch < args.crust_stop:
           train_dataset.switch_data()
@@ -231,14 +236,9 @@ def main_worker(gpu, ngpus_per_node, args):
             np.savetxt('all_preds_'+str(epoch)+'.csv', all_preds, delimiter=',')
           unique_preds = np.unique(labels)
           
-          if args.coreset_file:
-              train_dataset.adjust_base_indx_temp(coreset)
-              label_acc = train_dataset.estimate_label_acc()
-              train_dataset.print_class_dis()
-              train_dataset.print_real_class_dis()
-              print('label acc: ', label_acc)
-          elif args.use_crust and epoch > args.crust_start:
+          if args.use_crust and epoch > args.crust_start and not(args.coreset_file):
               #FL_part
+              print("finding coreset")
               #per class clustering
               ssets = []
               weights = []
@@ -272,8 +272,6 @@ def main_worker(gpu, ngpus_per_node, args):
               print('change train loader')
 
         #train for one epoch
-        weights = [1] * len(train_dataset) #?? Dong 206
-        weights = torch.FloatTensor(weights)#??
         if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:#???
             train(train_loader,model, criterion,weights,optimizer,epoch,args,log_training,tf_writer,fetch = True)#!!!
         else:
