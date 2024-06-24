@@ -86,6 +86,7 @@ parser.add_argument('--algo',type=str,default='algo1')
 parser.add_argument('--crust_stop',type=int,default=120)
 
 parser.add_argument('--coreset_file', type=str, default=None)
+parser.add_argument('--root-data', type=str, default=None)
 
 best_acc1 = 0
 
@@ -206,7 +207,7 @@ def main_worker(gpu, ngpus_per_node, args):
     with open(os.path.join(args.root_log, args.store_name,'args.txt'),'w') as f:
         f.write(str(args))
     tf_writer = SummaryWriter(log_dir = os.path.join(args.root_log, args.store_name)) #!!!
-    train_dataset.change_data('all_targets.csv')
+    train_dataset.change_data(args.root_data)
     train_dataset.split_data(args.sub_dataset)
     train_dataset.switch_data()
     weights = [1] * len(train_dataset) #?? Dong 206
