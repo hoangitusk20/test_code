@@ -258,6 +258,8 @@ def main_worker(gpu, ngpus_per_node, args):
               print('change train loader')
 
         #train for one epoch
+        weights = [1] * len(train_dataset) #?? Dong 206
+        weights = torch.FloatTensor(weights)#??
         if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:#???
             train(train_loader,model, criterion,weights,optimizer,epoch,args,log_training,tf_writer,fetch = True)#!!!
         else:
@@ -297,7 +299,7 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
     #switch to train mode
     model.train()
     end = time.time()
-
+    
     for i,batch in enumerate(train_loader):
         input, target, target_real, index = batch
         if fetch:
@@ -322,7 +324,7 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
         # compute output
         output, feats = model(input)
         loss = criterion(output, target)
-        #loss = (loss * c_weights).sum()
+        loss = (loss * c_weights).sum()
 
         # measure accuracy and record loss #!!!
         acc1, acc5 = accuracy(output, target, topk=(1,5))
