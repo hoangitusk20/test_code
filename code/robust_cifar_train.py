@@ -87,7 +87,7 @@ parser.add_argument('--crust_stop',type=int,default=120)
 
 parser.add_argument('--coreset_file', type=str, default=None)
 parser.add_argument('--root-data', type=str, default=None)
-
+parser.add_argument('--sub_coresize', type=float, default=None)
 best_acc1 = 0
 
 def main():
@@ -98,7 +98,6 @@ def main():
         args.store_name = '_'.join([args.dataset, args.arch, args.mislabel_type, str(args.mislabel_ratio), args.exp_str])
 
     prepare_folder(args)
-
     if args.seed is not None:
         random.seed(args.seed)
         torch.manual_seed(args.seed)
@@ -220,6 +219,12 @@ def main_worker(gpu, ngpus_per_node, args):
         train_dataset.print_class_dis()
         train_dataset.print_real_class_dis()
         print('label acc: ', label_acc)
+
+    if args.sub_coresize:
+        sub_coresize = args.sub_coresize
+    else:
+        sub_coresize = args.fl_ratio
+
     for epoch in range(args.start_epoch, args.epochs):
         if epoch < args.crust_stop and not(args.coreset_file):
           train_dataset.switch_data()
@@ -252,7 +257,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   if args.algo == "lazy_greedy":
                       V = range(len(grads)) 
                       F = FacilityLocationCIFAR(V, D = dists)
-                      sset, vals = lazy_greedy_heap(F,V,B)
+                      sset, vals = lazy_greedy_heap(F,V,B, sub_coresize)
                   else: 
                       sset = algo1(B,dists)
                   if len(list(sset))>0:
