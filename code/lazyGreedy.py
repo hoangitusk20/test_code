@@ -21,7 +21,7 @@ F: Hàm mục tiêu của thuật toán
 V: một dãy các số từ 1 đến số lượng điểm trong không gian
 B: Số điểm cần chọn lựa
 """
-def lazy_greedy_heap(F, V, B, c):
+def lazy_greedy_heap(F, V, B):
     curVal = 0 # Giá trị hiện tại của hàm mục tiêu (không dùng)
     sset = [] # Danh sách các điểm được chọn
     vals = [] # cả curVal và vals hình như không dùng tới
@@ -35,11 +35,8 @@ def lazy_greedy_heap(F, V, B, c):
     for i in range(B):
         el =_heappop_max(order)
         sset.append(el[1])
-
-    coresize = len(sset)
-    sub_coresize = int(len(V) * c)
-
-    return sset[-sub_coresize:],vals
+        
+    return sset,vals
 
     while order and len(sset) < B:
         if F.curVal == len(F.D): #????
