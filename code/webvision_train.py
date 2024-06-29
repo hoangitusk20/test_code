@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(description="Webvision Training") #???
 parser.add_argument('--dataset', default='webvision', help='dataset setting')
 parser.add_argument('-a','--arch', metavar='ARCH', default='inception')
 parser.add_argument('--exp-str',default='0', type=str, help='number to indicate which experiment it is')
-parser.add_argument('-j','--workers', default=4, type=int, metavar='N',
+parser.add_argument('-j','--workers', default=2, type=int, metavar='N',
                     help='number of data loading worker (deafault: 4)')
 parser.add_argument('--epochs', type=int, default=90, metavar='N',
                     help='number of total epochs to run')
