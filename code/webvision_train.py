@@ -5,6 +5,7 @@ import sys
 import time
 import warnings
 import numpy as np
+import pandas as pd
 from sklearn.metrics import pairwise_distances
 import torch    
 import torch.nn as nn
@@ -15,30 +16,26 @@ import torch.multiprocessing as mp
 import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-import models
+from models.inceptionv2 import *
 import copy
 from torch.utils.tensorboard import SummaryWriter
 from torch.autograd import grad
 from fl_cifar import FacilityLocationCIFAR
-from lazyGreedy import lazy_greedy_heap
+from lazyGreedy import lazy_greedy_heap, algo1, k_medoids
 from utils import *
-#from mislabel_cifar import MISLABELCIFAR10, MISLABELCIFAR100
-from mini_webvision import webvision_dataset
 
-model_names = sorted(name for name in models.__dict__
-                     if name.islower() and  not name.startswith("__")
-                     and callable(models.__dict__[name])) ##????
+model_names = 'inception' ##????
 
-parser = argparse.ArgumentParser(description="Pytorch Cifar Training") #???
-parser.add_argument('--dataset', default='mini-WebVision', help='dataset setting')##############
-parser.add_argument('-a','--arch', metavar='ARCH', default='resnet32',
-                    choices=model_names,
-                    help='model architecture: ' + ' | '.join(model_names) + ' (deafault: resnet32)')####################
+parser = argparse.ArgumentParser(description="Webvision Training") #???
+parser.add_argument('--dataset', default='webvision', help='dataset setting')
+parser.add_argument('-a','--arch', metavar='ARCH', default='inception')
 parser.add_argument('--exp-str',default='0', type=str, help='number to indicate which experiment it is')
 parser.add_argument('-j','--workers', default=4, type=int, metavar='N',
                     help='number of data loading worker (deafault: 4)')
-parser.add_argument('--epochs', type=int, default=120, metavar='N',
+parser.add_argument('--epochs', type=int, default=90, metavar='N',
                     help='number of total epochs to run')
+parser.add_argument('--stop-epoch', type=int, default=90, metavar='N',
+                    help='stop using crust after epoch')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restart)')
 parser.add_argument('-b','--batch-size', default=128, type=int,metavar='N',
@@ -65,15 +62,25 @@ parser.add_argument('--root-log', type=str, default='log')
 parser.add_argument('--root-model', type=str, default='checkpoint')
 parser.add_argument('--use_crust', action='store_true',
                     help="Whether to use clusters in dataset.")
+
+parser.add_argument('--label-type', type=str, default='noisy',
+                    help='noisy/pred')
+parser.add_argument('--sub-dataset', type=float, default=1.0)
+
 parser.add_argument('--r',default=2.0, type=float,
                     help='Distance threshsold (i.e. radius) in caculating clusters.')
 parser.add_argument('--fl-ratio', type=float,default=0.5,####???
                     help='Ratio for number of facilities.')
-#parser.add_argument('--mislabel-type',type=str,default='agnostic')
-#parser.add_argument('--mislabel-ratio',type=float,default=0.5)
+parser.add_argument('--crust-start',type=int,default=5)
+
 parser.add_argument('--rand-number',type=int, default=0,
                     help='Ratio for number of facilities.') ###?????
+parser.add_argument('--algo',type=str,default='lazy_greedy')
+parser.add_argument('--crust_stop',type=int,default=90)
 
+parser.add_argument('--coreset_file', type=str, default=None)
+parser.add_argument('--root-data', type=str, default=None)
+parser.add_argument('--sub_coresize', type=float, default=None)
 best_acc1 = 0
 
 def main():
@@ -84,7 +91,6 @@ def main():
         args.store_name = '_'.join([args.dataset, args.arch, args.exp_str])
 
     prepare_folder(args)
-
     if args.seed is not None:
         random.seed(args.seed)
         torch.manual_seed(args.seed)
@@ -111,8 +117,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     #create model
     print('=> creating model "{}"'.format(args.arch))
-    args.num_classes =50
-    model = models.__dict__[args.arch](num_classes = args.num_classes)
+    model = InceptionResNetV2(num_classes=args.num_classes)
 
     if args.gpu is not None: ##???
         torch.cuda.set_device(args.gpu)
@@ -146,20 +151,40 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Data loading code
     transforms_train = transforms.Compose([
-        transforms.RandomCrop(32, padding = 4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
+                transforms.Resize(320),
+                transforms.RandomResizedCrop(299),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225)),
+            ]) 
 
     transforms_val = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-    
+                transforms.Resize(320),
+                transforms.CenterCrop(299),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225)),
+            ]) 
 
-    train_dataset = webvision_dataset(root ='./data', transform = transforms_train)
-    val_dataset = webvision_dataset(root ='./data', transform = transforms_val,mode='test')
+    if args.dataset =='webvision':
+        train_dataset = webvision_dataset(
+            root= './data',
+            transform=transforms_train,
+            mode='train',
+            num_classes=50
+        )
+        val_dataset = webvision_dataset(
+            root= './data',
+            transform=transforms_val,
+            mode='test',
+            num_classes=50
+        )
+    # if args.dataset == 'cifar10':
+    #     train_dataset = MISLABELCIFAR10(root ='./data',mislabel_type = args.mislabel_type, mislabel_ratio = args.mislabel_ratio, transform = transforms_train, download = True)
+    #     val_dataset = datasets.CIFAR10(root ='./data', train = False, download = True, transform = transforms_val)
+
+    # elif args.dataset =='cifar100':
+    #     train_dataset = MISLABELCIFAR100(root ='./data', mislabel_type = args.mislabel_type, mislabel_ratio = args.mislabel_ratio,transform = transforms_train, download = True)
+    #     val_dataset = datasets.CIFAR100(root = './data', train = False, download = True, transform = transforms_val)
     
     criterion = nn.CrossEntropyLoss(reduction = 'none').cuda(args.gpu)
 
@@ -182,47 +207,71 @@ def main_worker(gpu, ngpus_per_node, args):
         return
     
     lr_schedular = torch.optim.lr_scheduler.MultiStepLR(optimizer, ##!!!!
-                    milestones = [80,100], last_epoch = args.start_epoch - 1)
+                    milestones = [30,60], last_epoch = args.start_epoch - 1)
     
     #init log for training #!!!
     log_training = open(os.path.join(args.root_log, args.store_name,'log.csv'),'w')
     with open(os.path.join(args.root_log, args.store_name,'args.txt'),'w') as f:
         f.write(str(args))
     tf_writer = SummaryWriter(log_dir = os.path.join(args.root_log, args.store_name)) #!!!
-
-    weights = [1] * len(train_dataset) 
+    if args.root_data:
+        train_dataset.change_data(args.root_data)
+    train_dataset.split_data(args.sub_dataset)
+    train_dataset.switch_data()
+    weights = [1] * len(train_dataset) #?? Dong 206
     weights = torch.FloatTensor(weights)#??
+    if args.coreset_file:
+        coreset = np.array(pd.read_csv(args.coreset_file, header=None).astype(int)).reshape(-1).tolist()
+        train_dataset.adjust_base_indx_temp(coreset)
+        label_acc = train_dataset.estimate_label_acc()
+        train_dataset.print_class_dis()
+        train_dataset.print_real_class_dis()
+        print('label acc: ', label_acc)
+
+    if args.sub_coresize:
+        sub_coresize = args.sub_coresize
+    else:
+        sub_coresize = args.fl_ratio
 
     for epoch in range(args.start_epoch, args.epochs):
-        if args.use_crust and epoch > 5:
-            train_dataset.switch_data()
-            #FL_part
-            grads_all, labels = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)#!!!#-----------
-            #per class clustering
-            ssets = []
-            weights = []
-            for c in range(args.num_classes):
-                sample_ids = np.where((labels == c) == True)[0] #!!!
-                grads = grads_all[sample_ids]
+        if epoch < args.crust_stop and not(args.coreset_file):
+          train_dataset.switch_data()
+          grads_all, all_preds, all_targets = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
+          if args.label_type == "pred":  
+            labels = all_preds
+          elif args.label_type == "noisy":
+            labels = all_targets
+          unique_preds = np.unique(labels)
+          
+          if args.use_crust and epoch > args.crust_start and not(args.coreset_file):
+              #FL_part
+              print("finding coreset")
+              #per class clustering
+              ssets = []
+              #weights = []
+              for c in unique_preds:
+                  sample_ids = np.where((labels == c) == True)[0] #!!!
+                  grads = grads_all[sample_ids]
+                  dists = pairwise_distances(grads)
+                  #weight = np.sum(dists < args.r, axis = 1)
+                  B = int(args.fl_ratio * len(grads))
+                  if args.algo == "lazy_greedy":
+                      V = range(len(grads)) 
+                      F = FacilityLocationCIFAR(V, D = dists)
+                      sset, vals = lazy_greedy_heap(F,V,B, sub_coresize)
+                  else: 
+                      sset = algo1(B,dists)
+                  if len(list(sset))>0:
+                      #weights.extend(weight[sset].tolist())
+                      sset = sample_ids[np.array(sset)]
+                      ssets += list(sset)
 
-                dists = pairwise_distances(grads)
-                weight = np.sum(dists < args.r, axis = 1)#!!!
-                V = range(len(grads)) 
-                F = FacilityLocationCIFAR(V, D = dists)
-                B = int(args.fl_ratio * len(grads))
-                sset, vals = lazy_greedy_heap(F,V,B)
-                weights.extend(weight[sset].tolist())
-                sset = sample_ids[np.array(sset)]
-                ssets += list(sset)
-            weights = torch.FloatTensor(weights)
-            train_dataset.adjust_base_indx_temp(ssets)#---------------
-            #label_acc = train_dataset.estimate_label_acc()
-            ##tf_writer.add_scalar('label acc ',label_acc, epoch)
-            #log_training.write('epoch %d label acc: %f\n'%(epoch, label_acc))
-            print('change train loader')
+              #weights = torch.FloatTensor(weights)
+              train_dataset.adjust_base_indx_temp(ssets)
+              print('change train loader')
 
         #train for one epoch
-        if args.use_crust and epoch > 5:#???
+        if args.use_crust and epoch > args.crust_start and epoch < args.stop_epoch:#???
             train(train_loader,model, criterion,weights,optimizer,epoch,args,log_training,tf_writer,fetch = True)#!!!
         else:
             train(train_loader,model, criterion,weights,optimizer,epoch,args,log_training,tf_writer,fetch=False)
@@ -261,20 +310,19 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
     #switch to train mode
     model.train()
     end = time.time()
-
+    
     for i,batch in enumerate(train_loader):
-        input, target, index = batch
-        '''
+        input, target, target_real, index = batch
         if fetch:
+            pass
             input_b =  train_loader.dataset.fetch(target)
             lam = np.random.beta(1, 0.1)
             input = lam * input + (1 - lam) * input_b   
-        '''
-        c_weigths = weights[index]
-        c_weigths = c_weigths.type(torch.FloatTensor)
-        c_weigths =  c_weigths / c_weigths.sum()
+        c_weights = weights[index]
+        c_weights = c_weights.type(torch.FloatTensor)
+        c_weights =  c_weights / c_weights.sum()
         if args.gpu is not None:
-            c_weigths = c_weigths.to(args.gpu, non_blocking = True) # So sanh voi dong 285, Khi nao dung cuda?
+            c_weights = c_weights.to(args.gpu, non_blocking = True) # So sanh voi dong 285, Khi nao dung cuda?
 
         #measure data loading time
         data_time.update(time.time() - end)
@@ -285,9 +333,9 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
             target = target.cuda(args.gpu, non_blocking = True)
 
         # compute output
-        output, feats = model(input)
+        output, feats = model(input) #############################
         loss = criterion(output, target)
-        loss = (loss * c_weigths).sum()
+        loss = (loss * c_weights).sum()
 
         # measure accuracy and record loss #!!!
         acc1, acc5 = accuracy(output, target, topk=(1,5))
@@ -358,39 +406,53 @@ def validate(val_loader, model, criterion, epoch, args, log_training=None, tf_wr
             tf_writer.add_scalar('acc/test_top1', top1.avg, epoch)
             tf_writer.add_scalar('acc/test_top5', top5.avg, epoch)
             log_training.write('epoch %d val acc: %f\n'%(epoch, top1.avg))
+            print('epoch %d val acc: %f\n'%(epoch, top1.avg))
 
     return top1.avg
 
 def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training):
-    #switch model to train mode
+    # switch to train mode
     model.train()
     all_grads = []
     all_targets = []
-    all_preds = [] # Hình như không dùng đến
-    #top1 = AverageMeter('Acc@1',':6.2f')
+    all_preds = []
+    top1 = AverageMeter('Acc@1', ':6.2f')
+    top1_on_noisy = AverageMeter('Acc@1', ':6.2f')
 
-    for _, (input, target, idx) in enumerate(trainval_loader): #???
+    for i, (input, target, idx) in enumerate(trainval_loader):
         if args.gpu is not None:
-            input = input.cuda(args.gpu, non_blocking = True)
+            input = input.cuda(args.gpu, non_blocking=True)
         all_targets.append(target)
-        target = target.cuda(args.gpu, non_blocking = True)
-        #target_real = target_real.cuda(args.gpu, non_blocking = True)
-        #compute output
-        output, feats = model(input)#!!!
-        _,pred = torch.max(output,1)
-        loss = criterion(output,target).mean()
-        #acc1, acc5 = accuracy(output,target_real,topk=(1,5))
-        #top1.update(acc1[0],input.size(0))#!!!
-        est_grad = grad(loss,output)
+        target = target.cuda(args.gpu, non_blocking=True)
+        # compute output
+        output, feat = model(input)
+        _, pred = torch.max(output, 1)
+
+        loss = criterion(output, target).mean()
+        acc1_on_noisy, acc5_on_noisy = accuracy(output, target, topk=(1, 5))
+        top1_on_noisy.update(acc1_on_noisy[0], input.size(0))
+        est_grad = grad(loss, feat)
         all_grads.append(est_grad[0].detach().cpu().numpy())
-        all_preds.append(pred.detach().cpu().numpy())#
-    
+        all_preds.append(pred.detach().cpu().numpy())
     all_grads = np.vstack(all_grads)
     all_targets = np.hstack(all_targets)
-    all_preds = np.hstack(all_preds)#
 
-    #log_training.write('epoch %d train acc: %f\n'%(epoch, top1.avg))
-    return all_grads, all_targets
+    all_preds = np.hstack(all_preds)
 
+    # In ra số phần tử khác nhau trong all_preds
+    unique_preds, counts = np.unique(all_preds, return_counts=True)
+    count_dict = dict(zip(unique_preds, counts))
+    #print("Number label of each class in predict:")
+    #print(count_dict)
+
+    log_training.write('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
+    print('epoch %d train acc on noisy: %f\n'%(epoch, top1_on_noisy.avg))
+    return all_grads, all_preds, all_targets
+    if args.label_type == "pred":    
+        return all_grads, all_preds
+    elif args.label_type == "noisy":
+        return all_grads, all_targets
+    else:
+        return all_grads, all_targets_real
 if __name__ == '__main__':
     main()
