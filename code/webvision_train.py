@@ -39,7 +39,7 @@ parser.add_argument('--stop-epoch', type=int, default=90, metavar='N',
                     help='stop using crust after epoch')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restart)')
-parser.add_argument('-b','--batch-size', default=128, type=int,metavar='N',
+parser.add_argument('-b','--batch-size', default=32, type=int,metavar='N',
                     help='mini-batch-size')
 parser.add_argument('--lr','--learning-rate',default=0.1,type=float, metavar='LR',
                     help='initial learning rate', dest='lr')
@@ -118,7 +118,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     #create model
     print('=> creating model "{}"'.format(args.arch))
-    model = InceptionResNetV2(num_classes= 50)
+    model = InceptionResNetV2(num_classes=50)
 
     if args.gpu is not None: ##???
         torch.cuda.set_device(args.gpu)
@@ -171,13 +171,13 @@ def main_worker(gpu, ngpus_per_node, args):
             root= './data',
             transform=transforms_train,
             mode='train',
-            num_classes=50
+            num_class=50
         )
         val_dataset = webvision_dataset(
             root= './data',
             transform=transforms_val,
             mode='test',
-            num_classes=50
+            num_class=50
         )
     # if args.dataset == 'cifar10':
     #     train_dataset = MISLABELCIFAR10(root ='./data',mislabel_type = args.mislabel_type, mislabel_ratio = args.mislabel_ratio, transform = transforms_train, download = True)
@@ -190,7 +190,7 @@ def main_worker(gpu, ngpus_per_node, args):
     criterion = nn.CrossEntropyLoss(reduction = 'none').cuda(args.gpu)
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size = args.batch_size, shuffle = True,
+        train_dataset, batch_size = args.batch_size, shuffle = False,
         num_workers = args.workers, pin_memory = True
     )
     val_loader = torch.utils.data.DataLoader(
@@ -215,27 +215,12 @@ def main_worker(gpu, ngpus_per_node, args):
     with open(os.path.join(args.root_log, args.store_name,'args.txt'),'w') as f:
         f.write(str(args))
     tf_writer = SummaryWriter(log_dir = os.path.join(args.root_log, args.store_name)) #!!!
-    if args.root_data:
-        train_dataset.change_data(args.root_data)
-    train_dataset.split_data(args.sub_dataset)
-    train_dataset.switch_data()
     weights = [1] * len(train_dataset) #?? Dong 206
     weights = torch.FloatTensor(weights)#??
-    if args.coreset_file:
-        coreset = np.array(pd.read_csv(args.coreset_file, header=None).astype(int)).reshape(-1).tolist()
-        train_dataset.adjust_base_indx_temp(coreset)
-        label_acc = train_dataset.estimate_label_acc()
-        train_dataset.print_class_dis()
-        train_dataset.print_real_class_dis()
-        print('label acc: ', label_acc)
 
-    if args.sub_coresize:
-        sub_coresize = args.sub_coresize
-    else:
-        sub_coresize = args.fl_ratio
 
     for epoch in range(args.start_epoch, args.epochs):
-        if epoch < args.crust_stop and not(args.coreset_file):
+        if epoch < args.crust_stop:
           train_dataset.switch_data()
           grads_all, all_preds, all_targets = estimate_grads(trainval_loader, model, criterion, args, epoch, log_training)
           if args.label_type == "pred":  
@@ -244,7 +229,7 @@ def main_worker(gpu, ngpus_per_node, args):
             labels = all_targets
           unique_preds = np.unique(labels)
           
-          if args.use_crust and epoch > args.crust_start and not(args.coreset_file):
+          if args.use_crust and epoch > args.crust_start:
               #FL_part
               print("finding coreset")
               #per class clustering
@@ -259,7 +244,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   if args.algo == "lazy_greedy":
                       V = range(len(grads)) 
                       F = FacilityLocationCIFAR(V, D = dists)
-                      sset, vals = lazy_greedy_heap(F,V,B, sub_coresize)
+                      sset, vals = lazy_greedy_heap(F,V,B)
                   else: 
                       sset = algo1(B,dists)
                   if len(list(sset))>0:
