@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(description="Webvision Training") #???
 parser.add_argument('--dataset', default='webvision', help='dataset setting')
 parser.add_argument('-a','--arch', metavar='ARCH', default='inception')
 parser.add_argument('--exp-str',default='0', type=str, help='number to indicate which experiment it is')
-parser.add_argument('-j','--workers', default=4, type=int, metavar='N',
+parser.add_argument('-j','--workers', default=2, type=int, metavar='N',
                     help='number of data loading worker (deafault: 4)')
 parser.add_argument('--epochs', type=int, default=90, metavar='N',
                     help='number of total epochs to run')
@@ -66,7 +66,6 @@ parser.add_argument('--use_crust', action='store_true',
 
 parser.add_argument('--label-type', type=str, default='noisy',
                     help='noisy/pred')
-parser.add_argument('--sub-dataset', type=float, default=1.0)
 
 parser.add_argument('--r',default=2.0, type=float,
                     help='Distance threshsold (i.e. radius) in caculating clusters.')
@@ -79,9 +78,6 @@ parser.add_argument('--rand-number',type=int, default=0,
 parser.add_argument('--algo',type=str,default='lazy_greedy')
 parser.add_argument('--crust_stop',type=int,default=90)
 
-parser.add_argument('--coreset_file', type=str, default=None)
-parser.add_argument('--root-data', type=str, default=None)
-parser.add_argument('--sub_coresize', type=float, default=None)
 best_acc1 = 0
 
 def main():
