@@ -65,7 +65,9 @@ class webvision_dataset(Dataset):
         self.data = new_data
         self.targets = new_targets
 
-
+    def __len__(self):
+        return len(self.data)
+        
     def __getitem__(self, index):
         if self.mode == 'train':
             img_path = self.data[index]
