@@ -304,7 +304,7 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
             input_b =  train_loader.dataset.fetch(target)
             lam = np.random.beta(1, 0.1)
             input = lam * input + (1 - lam) * input_b   
-        c_weights = weights[index]
+        c_weights = np.ones(len([index]))
         c_weights = c_weights.type(torch.FloatTensor)
         c_weights =  c_weights / c_weights.sum()
         if args.gpu is not None:
