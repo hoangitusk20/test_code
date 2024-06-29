@@ -9,7 +9,7 @@ import copy
 
 
 class webvision_dataset(Dataset):
-    def __init__(self, root, mode ='train', num_class=50, transform = None,target_transform = None): 
+    def __init__(self, root, mode ='train', num_classes=50, transform = None,target_transform = None): 
 
         self.root = root
         self.transform = transform
@@ -77,7 +77,7 @@ class webvision_dataset(Dataset):
         
         elif self.mode=='test':
             img_path = self.data[index]
-            target = self.targets[index]]     
+            target = self.targets[index]    
             image = Image.open(self.root+'val_images_256/'+img_path).convert('RGB')   
             img = self.transform(image) 
             return img, target
