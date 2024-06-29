@@ -294,12 +294,7 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
     end = time.time()
     
     for i,batch in enumerate(train_loader):
-        input, target, target_real, index = batch
-        if fetch:
-            pass
-            input_b =  train_loader.dataset.fetch(target)
-            lam = np.random.beta(1, 0.1)
-            input = lam * input + (1 - lam) * input_b   
+        input, target, index = batch 
         c_weights = np.ones(len([index]))
         c_weights = c_weights.type(torch.FloatTensor)
         c_weights =  c_weights / c_weights.sum()
