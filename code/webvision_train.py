@@ -118,7 +118,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     #create model
     print('=> creating model "{}"'.format(args.arch))
-    model = InceptionResNetV2(num_classes=args.num_classes)
+    model = InceptionResNetV2(num_classes= 50)
 
     if args.gpu is not None: ##???
         torch.cuda.set_device(args.gpu)
