@@ -80,6 +80,6 @@ class webvision_dataset(Dataset):
         elif self.mode=='test':
             img_path = self.data[index]
             target = self.targets[index]    
-            image = Image.open(self.root+'val_images_256/'+img_path).convert('RGB')   
+            image = Image.open(self.root+'/val_images_256/'+img_path).convert('RGB')   
             img = self.transform(image) 
             return img, target
