@@ -9,7 +9,7 @@ import copy
 
 
 class webvision_dataset(Dataset):
-    def __init__(self, root, mode ='train', num_classes=50, transform = None,target_transform = None): 
+    def __init__(self, root, mode ='train', num_class=50, transform = None,target_transform = None): 
 
         self.root = root
         self.transform = transform
@@ -17,7 +17,7 @@ class webvision_dataset(Dataset):
         self.mode = mode
 
         if self.mode == 'test':
-            with open(os.path.join(self.root, 'info/val_filelist.txt')) as f:
+            with open(self.root+ '/info/val_filelist.txt') as f:
                 lines = f.readlines()
 
             self.data = []
@@ -30,7 +30,7 @@ class webvision_dataset(Dataset):
                     self.targets.append(target)
 
         else:
-            with open(self.root+'info/train_filelist_google.txt') as f:
+            with open(self.root+'/info/train_filelist_google.txt') as f:
                 lines=f.readlines()
 
             data = []
