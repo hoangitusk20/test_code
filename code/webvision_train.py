@@ -296,8 +296,13 @@ def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_t
     for i,batch in enumerate(train_loader):
         input, target, index = batch 
         c_weights = np.ones(len([index]))
-        c_weights = c_weights.type(torch.FloatTensor)
-        c_weights =  c_weights / c_weights.sum()
+        
+        # Convert numpy array to PyTorch tensor
+        c_weights = torch.FloatTensor(c_weights)
+        
+        c_weights = c_weights / c_weights.sum()
+
+
         if args.gpu is not None:
             c_weights = c_weights.to(args.gpu, non_blocking = True) # So sanh voi dong 285, Khi nao dung cuda?
 
