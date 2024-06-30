@@ -262,7 +262,7 @@ def main_worker(gpu, ngpus_per_node, args):
                       sset = algo1(B,dists)
                   weight = [len(sset)]*len(sset) 
                   if len(list(sset))>0:
-                      weights.extend(weight[sset])
+                      weights.extend(weight)
                       sset = sample_ids[np.array(sset)]
                       ssets += list(sset)
               if epoch == args.crust_stop - 1:
