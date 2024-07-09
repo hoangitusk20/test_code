@@ -286,9 +286,10 @@ def main_worker(gpu, ngpus_per_node, args):
 
         #evaluate on validation set
         acc1, all_pred_val, all_targets_val = validate(val_loader, model, criterion, epoch, args, log_training,tf_writer)
+         np.savetxt('all_target_val'+'.csv', all_targets_val, delimiter=',')
         if epoch == args.epochs - 1:
             np.savetxt('all_preds_val_'+str(epoch)+'.csv', all_preds, delimiter=',')
-            np.savetxt('all_target_val_'+str(epoch)+'.csv', all_targets_val, delimiter=',')
+           
 
         #remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
