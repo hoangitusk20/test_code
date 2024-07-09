@@ -386,6 +386,7 @@ def validate(val_loader, model, criterion, epoch, args, log_training=None, tf_wr
     with torch.no_grad():
         end = time.time()
         for i, (input, target) in enumerate(val_loader):
+            all_targets.append(target)
             input = input.type(torch.FloatTensor)
             if args.gpu is not None:
                 input = input.cuda(args.gpu, non_blocking=True)
@@ -395,7 +396,7 @@ def validate(val_loader, model, criterion, epoch, args, log_training=None, tf_wr
             output, feats = model(input)
             _, pred = torch.max(output, 1)
             all_preds.append(pred.detach().cpu().numpy())
-            all_targets.append(target)
+            
           
             loss = criterion(output, target)
             loss = loss.mean()
