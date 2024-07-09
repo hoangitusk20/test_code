@@ -285,9 +285,10 @@ def main_worker(gpu, ngpus_per_node, args):
             train(train_loader,model, criterion,weights,optimizer,epoch,args,log_training,tf_writer,fetch=False)
 
         #evaluate on validation set
-        acc1, all_pred_val = validate(val_loader, model, criterion, epoch, args, log_training,tf_writer)
-        if epoch == 119:
+        acc1, all_pred_val, all_targets_val = validate(val_loader, model, criterion, epoch, args, log_training,tf_writer)
+        if epoch == args.epochs - 1:
             np.savetxt('all_preds_val_'+str(epoch)+'.csv', all_preds, delimiter=',')
+            np.savetxt('all_target_val_'+str(epoch)+'.csv', all_preds, delimiter=',')
 
         #remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -381,6 +382,7 @@ def validate(val_loader, model, criterion, epoch, args, log_training=None, tf_wr
     # switch to evaluate mode
     model.eval()
     all_preds = []
+    all_targets = []
     with torch.no_grad():
         end = time.time()
         for i, (input, target) in enumerate(val_loader):
@@ -393,6 +395,8 @@ def validate(val_loader, model, criterion, epoch, args, log_training=None, tf_wr
             output, feats = model(input)
             _, pred = torch.max(output, 1)
             all_preds.append(pred.detach().cpu().numpy())
+            all_targets.append(target)
+          
             loss = criterion(output, target)
             loss = loss.mean()
 
@@ -420,7 +424,8 @@ def validate(val_loader, model, criterion, epoch, args, log_training=None, tf_wr
             log_training.write('epoch %d val acc: %f\n'%(epoch, top1.avg))
             print('epoch %d val acc: %f\n'%(epoch, top1.avg))
     all_preds = np.hstack(all_preds)
-    return top1.avg, all_preds
+    all_targets = np.hstack(all_targets)
+    return top1.avg, all_preds, all_targets
 
 def estimate_grads(trainval_loader, model, criterion, args, epoch, log_training):
     # switch to train mode
