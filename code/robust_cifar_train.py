@@ -252,7 +252,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   sample_ids = np.where((labels == c) == True)[0] #!!!
                   grads = grads_all[sample_ids]
                   dists = pairwise_distances(grads)
-                  
+                  weight = np.sum(dists < args.r, axis=1)
                   B = int(args.fl_ratio * len(grads))
                   if args.algo == "lazy_greedy":
                       V = range(len(grads)) 
@@ -260,11 +260,9 @@ def main_worker(gpu, ngpus_per_node, args):
                       sset, vals = lazy_greedy_heap(F,V,B, sub_coresize)
                   else: 
                       sset = algo1(B,dists)
-                  weight = [len(sset)]*len(sset) 
-                  if len(list(sset))>0:
-                      weights.extend(weight)
-                      sset = sample_ids[np.array(sset)]
-                      ssets += list(sset)
+                  weights.extend(weight[sset].tolist())
+                  sset = sample_ids[np.array(sset)]
+                  ssets += list(sset)
               if epoch == args.crust_stop - 1:
                   np_ssets = np.array(ssets)
                   np.savetxt('coreset.csv', np_ssets, delimiter=',')
