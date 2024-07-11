@@ -68,6 +68,9 @@ parser.add_argument('--root-model', type=str, default='checkpoint')
 parser.add_argument('--use_crust', action='store_true',
                     help="Whether to use clusters in dataset.")
 
+parser.add_argument('--use_lr_scheduler', action='store_true',
+                    help="Whether to use_lr_scheduler.")
+
 parser.add_argument('--label-type', type=str, default='noisy',
                     help='noisy/pred/correct')
 parser.add_argument('--sub-dataset', type=float, default=1.0)
@@ -88,6 +91,7 @@ parser.add_argument('--crust_stop',type=int,default=120)
 parser.add_argument('--coreset_file', type=str, default=None)
 parser.add_argument('--root-data', type=str, default=None)
 parser.add_argument('--sub_coresize', type=float, default=None)
+
 best_acc1 = 0
 
 def main():
@@ -305,7 +309,8 @@ def main_worker(gpu, ngpus_per_node, args):
             'optimizer' : optimizer.state_dict()
 
         },is_best)
-        lr_schedular.step()#!!!
+        if not args.use_lr_scheduler:
+            lr_schedular.step()#!!!
         print('best_acc1: {:.4f}'.format(best_acc1.item()))
 def train(train_loader, model, criterion, weights, optimizer, epoch, args, log_training, tf_writer, fetch = False):
     batch_time = AverageMeter('Time', ':6.3f')
