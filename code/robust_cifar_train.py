@@ -262,8 +262,11 @@ def main_worker(gpu, ngpus_per_node, args):
                       V = range(len(grads)) 
                       F = FacilityLocationCIFAR(V, D = dists)
                       sset, vals = lazy_greedy_heap(F,V,B, sub_coresize)
-                  else: 
+                  elif args.algo =="algo1": 
                       sset = algo1(B,dists)
+                  else:
+                      distances = np.linalg.norm(grads, axis=1)
+                      sset = np.argsort(distances)[:B].tolist()
                   weights.extend(weight[sset].tolist())
                   sset = sample_ids[np.array(sset)]
                   ssets += list(sset)
