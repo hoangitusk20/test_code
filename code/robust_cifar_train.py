@@ -268,7 +268,7 @@ def main_worker(gpu, ngpus_per_node, args):
                       distances = np.linalg.norm(grads, axis=1)
                       sset = np.argsort(distances)[:B].tolist()
                   weights.extend(weight[sset].tolist())
-                  sset = sample_ids[np.array(sset)]
+                  sset = sample_ids[sset]
                   ssets += list(sset)
               if epoch == args.crust_stop - 1:
                   np_ssets = np.array(ssets)
