@@ -267,7 +267,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   else:
                       distances = np.linalg.norm(grads, axis=1)
                       sset = np.argsort(distances)[:B].tolist()
-                      weight = np.array([1] * len(sset))
+                      weight = np.array([1] * len(grads))
                   weights.extend(weight[sset].tolist())
                   sset = sample_ids[sset]
                   ssets += list(sset)
